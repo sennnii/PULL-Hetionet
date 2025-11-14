@@ -103,8 +103,16 @@ def preprocess_hetionet(hetionet_data):
 
         edge_type = edge['kind'].replace(' ', '_') # 공백을 '_'로
 
+        # --- ✅ 양방향 엣지 처리 (수정) ---
+        # 1. 정방향 엣지 추가
         edge_data[(src_type, edge_type, dst_type)][0].append(src_mapped_idx)
         edge_data[(src_type, edge_type, dst_type)][1].append(dst_mapped_idx)
+
+        # 2. 역방향 엣지 추가 ('rev_' 접두사 사용)
+        rev_edge_type = f"rev_{edge_type}"
+        edge_data[(dst_type, rev_edge_type, src_type)][0].append(dst_mapped_idx)
+        edge_data[(dst_type, rev_edge_type, src_type)][1].append(src_mapped_idx)
+        # --- (수정 끝) ---
 
     # --- 스킵된 엣지 결과 출력 추가 ---
     if skipped_edges_count > 0:
