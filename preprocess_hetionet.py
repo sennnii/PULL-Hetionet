@@ -39,9 +39,9 @@ def preprocess_hetionet(hetionet_data):
     node_mapping = {} # {'NodeType': {node_id: mapped_int}}
     
     # node_type_info 변수에는 "Compound", "Gene" 같은 키(문자열)가 들어옵니다.
-    for node_type_info in hetionet_data['metanode_kinds']:
-        node_type = node_type_info 
-        node_mapping[node_type] = {}
+    for node_type_info in hetionet_data['metanode_kinds']:
+        node_type = node_type_info 
+        node_mapping[node_type] = {}
 
     node_idx_counter = defaultdict(int)
     
