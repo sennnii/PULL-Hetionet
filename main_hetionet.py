@@ -56,7 +56,7 @@ def main():
     print("데이터 분할 중 (Train/Val/Test)...")
     edge_type_to_predict = ('Compound', 'treats', 'Disease')
     
-    # --- ✅ 수정: 역방향 엣지 타입 정의 ---
+    # --- 수정: 역방향 엣지 타입 정의 ---
     rev_edge_type_to_predict = ('Disease', 'rev_treats', 'Compound')
     
     transform = RandomLinkSplit(
@@ -65,7 +65,7 @@ def main():
         is_undirected=True,
         add_negative_train_samples=False,
         edge_types=[edge_type_to_predict],
-        # --- ✅ 수정: 역방향 엣지 타입 지정 ---
+        # --- 수정: 역방향 엣지 타입 지정 ---
         rev_edge_types=[rev_edge_type_to_predict]
     )
     
