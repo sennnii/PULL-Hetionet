@@ -1,2 +1,2 @@
-from .model import *
-from .train import *
+from .model_hetionet import *
+from .train_hetionet import *
