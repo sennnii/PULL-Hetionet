@@ -9,10 +9,8 @@ from torch_geometric.data import HeteroData
 from torch_geometric.transforms import RandomLinkSplit
 
 # --- PULL-Hetionet 임포트 ---
-# src/ 폴더에 저장된 새 파일들을 불러옵니다.
 from src.model_hetionet import HeteroPULLModel
 from src.train_hetionet import train, test, get_drug_repurposing_candidates
-# ------------------------------
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -55,37 +53,60 @@ def main():
     # 2. 데이터 분할 (Train/Validation/Test)
     print("데이터 분할 중 (Train/Val/Test)...")
     edge_type_to_predict = ('Compound', 'treats', 'Disease')
-    
-    # --- 수정: 역방향 엣지 타입 정의 ---
     rev_edge_type_to_predict = ('Disease', 'rev_treats', 'Compound')
     
+    # --- 수정: negative 샘플 추가 ---
     transform = RandomLinkSplit(
         num_val=0.1,
         num_test=0.1,
         is_undirected=True,
-        add_negative_train_samples=False,
+        add_negative_train_samples=False,  # 학습용은 PULL에서 자체 생성
+        neg_sampling_ratio=1.0,  # validation/test용 negative 샘플 비율
         edge_types=[edge_type_to_predict],
-        # --- 수정: 역방향 엣지 타입 지정 ---
         rev_edge_types=[rev_edge_type_to_predict]
     )
     
     train_data, val_data, test_data = transform(data)
     
-    # 분할된 엣지 인덱스를 원본 'data' 객체에 저장 (분석용)
+    # 분할된 엣지 인덱스를 원본 'data' 객체에 저장
     data[edge_type_to_predict]['train_pos_edge_index'] = train_data[edge_type_to_predict].edge_index
     data[edge_type_to_predict]['val_pos_edge_index'] = val_data[edge_type_to_predict].edge_label_index
     data[edge_type_to_predict]['test_pos_edge_index'] = test_data[edge_type_to_predict].edge_label_index
     
+    # --- 수정: negative 샘플 처리 ---
     val_edges = {
         'pos': val_data[edge_type_to_predict].edge_label_index,
-        'neg': val_data[edge_type_to_predict].neg_edge_label_index
+        'neg': val_data[edge_type_to_predict].get('neg_edge_label_index', 
+                torch.empty((2, 0), dtype=torch.long))  # 없으면 빈 텐서
     }
     test_edges = {
         'pos': test_data[edge_type_to_predict].edge_label_index,
-        'neg': test_data[edge_type_to_predict].neg_edge_label_index
+        'neg': test_data[edge_type_to_predict].get('neg_edge_label_index',
+                torch.empty((2, 0), dtype=torch.long))  # 없으면 빈 텐서
     }
     
-    # 데이터를 GPU로 이동
+    # negative 샘플이 없으면 수동 생성
+    if val_edges['neg'].shape[1] == 0:
+        print("  - Validation negative 샘플 생성 중...")
+        from torch_geometric.utils import negative_sampling
+        val_edges['neg'] = negative_sampling(
+            edge_index=train_data[edge_type_to_predict].edge_index,
+            num_nodes=(data['Compound'].num_nodes, data['Disease'].num_nodes),
+            num_neg_samples=val_edges['pos'].size(1),
+            method='sparse'
+        )
+    
+    if test_edges['neg'].shape[1] == 0:
+        print("  - Test negative 샘플 생성 중...")
+        from torch_geometric.utils import negative_sampling
+        test_edges['neg'] = negative_sampling(
+            edge_index=train_data[edge_type_to_predict].edge_index,
+            num_nodes=(data['Compound'].num_nodes, data['Disease'].num_nodes),
+            num_neg_samples=test_edges['pos'].size(1),
+            method='sparse'
+        )
+    
+    # 데이터를 GPU/CPU로 이동
     data = data.to(device)
     train_data = train_data.to(device)
     val_edges['pos'] = val_edges['pos'].to(device)
@@ -95,10 +116,12 @@ def main():
 
     print("\n[데이터 로드 완료]")
     print(f"학습용 'treats' 엣지: {train_data['Compound', 'treats', 'Disease'].edge_index.shape[1]}")
-    print(f"검증용 'treats' 엣지: {val_edges['pos'].shape[1]}")
-    print(f"테스트용 'treats' 엣지: {test_edges['pos'].shape[1]}")
+    print(f"검증용 'treats' 엣지 (Pos): {val_edges['pos'].shape[1]}")
+    print(f"검증용 'treats' 엣지 (Neg): {val_edges['neg'].shape[1]}")
+    print(f"테스트용 'treats' 엣지 (Pos): {test_edges['pos'].shape[1]}")
+    print(f"테스트용 'treats' 엣지 (Neg): {test_edges['neg'].shape[1]}")
 
-    # 3. 모델 초기화 (src.model_hetionet에서 불러옴)
+    # 3. 모델 초기화
     model = HeteroPULLModel(
         data=data,
         hidden_channels=args.hidden_dim,
@@ -120,16 +143,16 @@ def main():
     for epoch in range(1, args.epochs + 1):
         epoch_start_time = time.time()
         
-        # PULL 학습 함수 호출 (src.train_hetionet에서 불러옴)
+        # PULL 학습
         loss, z_dict, _, _ = train(model, optimizer, data, train_data, criterion, epoch, z_dict)
         
-        # 검증 (Validation)
+        # 검증
         val_loss, val_auc = test(data, model, val_edges, criterion)
         
         if val_auc > best_val_auc:
             best_val_auc = val_auc
             best_epoch = epoch
-            # 테스트 (Test)
+            # 테스트
             test_loss, test_auc = test(data, model, test_edges, criterion)
         else:
             if epoch > 1: 
