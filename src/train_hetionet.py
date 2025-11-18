@@ -5,7 +5,7 @@ from torch_geometric.utils import negative_sampling
 import gc
 
 def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
-    """ PULL 로직 - 개선 버전 """
+    """ PULL 로직 - 최종 개선 버전 """
     
     edge_type_to_predict = ('Compound', 'treats', 'Disease')
     
@@ -18,46 +18,46 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
         print("  - PULL: 새로운 positive 엣지 탐색 중... (CPU)")
         
         with torch.no_grad():
+            # GPU → CPU
             z_dict_cpu = {k: v.cpu() for k, v in z_dict.items()}
             train_edge_cpu = train_data[edge_type_to_predict].edge_index.cpu()
             
             compound_embeds = z_dict_cpu['Compound']
             disease_embeds = z_dict_cpu['Disease']
             
-            # ✅ 수정 1: Sigmoid 제거, 음수 infinity로 제외
-            prob_adj = compound_embeds @ disease_embeds.t()
-            prob_adj[train_edge_cpu[0], train_edge_cpu[1]] = -float('inf')  # 🔧 0 → -inf
+            # ✅ 핵심 수정: Raw scores 사용, -inf로 마스킹
+            raw_scores = compound_embeds @ disease_embeds.t()
+            raw_scores[train_edge_cpu[0], train_edge_cpu[1]] = -float('inf')
             
             n_edge = train_edge_cpu.shape[1]
-            n_edge_add = int(n_edge * 0.03 * (epoch - 1))  # 🔧 0.02 → 0.03
+            n_edge_add = int(n_edge * 0.05 * (epoch - 1))  # ratio 증가
             
             if n_edge_add > 0:
-                flat_probs = prob_adj.flatten()
-                top_k_indices = torch.topk(flat_probs, n_edge_add).indices
+                flat_scores = raw_scores.flatten()
+                top_k_indices = torch.topk(flat_scores, n_edge_add).indices
                 
-                row_indices = top_k_indices // prob_adj.shape[1]
-                col_indices = top_k_indices % prob_adj.shape[1]
+                row_indices = top_k_indices // raw_scores.shape[1]
+                col_indices = top_k_indices % raw_scores.shape[1]
                 
                 device = train_data[edge_type_to_predict].edge_index.device
                 pos_edge_index_add = torch.stack([row_indices, col_indices], dim=0).to(device)
                 
-                # ✅ 수정 2: Soft weight 적용 (상위 결과만 sigmoid)
-                raw_probs = prob_adj[row_indices, col_indices]
-                pos_edge_weight_add = torch.sigmoid(raw_probs).to(device)  # 🔧 여기서만 sigmoid
+                # Soft weight: 선택된 엣지에만 sigmoid
+                selected_scores = raw_scores[row_indices, col_indices]
+                pos_edge_weight_add = torch.sigmoid(selected_scores).to(device)
                 
-                print(f"  - PULL: {n_edge_add}개 엣지 추가됨")
+                print(f"  - PULL: {n_edge_add}개 엣지 추가됨 (평균 weight: {pos_edge_weight_add.mean():.4f})")
             else:
                 device = train_data[edge_type_to_predict].edge_index.device
                 pos_edge_index_add = torch.tensor([[],[]], dtype=torch.long, device=device)
                 pos_edge_weight_add = torch.tensor([], device=device)
         
-        # ✅ 수정 3: 메모리 정리 개선
-        del z_dict_cpu, compound_embeds, disease_embeds, prob_adj
-        if 'flat_probs' in locals():
-            del flat_probs
+        # 메모리 정리
+        del z_dict_cpu, compound_embeds, disease_embeds, raw_scores, flat_scores
         gc.collect()
         torch.cuda.empty_cache()
         
+        # 엣지 병합
         original_pos_edge_index = train_data[edge_type_to_predict].edge_index
         original_pos_edge_weight = torch.ones(original_pos_edge_index.shape[1], device=original_pos_edge_index.device)
         
@@ -67,30 +67,29 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
         edge_index_dict = train_data.edge_index_dict.copy()
         edge_index_dict[edge_type_to_predict] = pos_edge_index
 
-    # ✅ 수정 4: Inner Loop 증가 및 전체 데이터 사용
-    num_inner_epochs = 50  # 🔧 30 → 50
-    batch_size = 200       # 🔧 128 → 200
+    # ✅ 학습 파라미터 최적화
+    num_inner_epochs = 100  # 증가
     
     model.train()
     total_loss = 0
+    num_batches = 0
     
     for inner_epoch in range(1, num_inner_epochs + 1):
-        # ✅ 수정 5: 전체 엣지 사용 (샘플링 제거)
-        num_batches = (pos_edge_index.size(1) + batch_size - 1) // batch_size
+        # ✅ 전체 엣지 사용 (샘플링 제거)
+        batch_size = min(300, pos_edge_index.size(1))  # 동적 배치
+        perm = torch.randperm(pos_edge_index.size(1))
         
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, pos_edge_index.size(1))
+        for i in range(0, pos_edge_index.size(1), batch_size):
+            batch_idx = perm[i:min(i+batch_size, pos_edge_index.size(1))]
             
-            # Positive 배치
-            batch_pos_edge = pos_edge_index[:, start_idx:end_idx]
-            batch_pos_weight = pos_edge_weight[start_idx:end_idx]
+            batch_pos_edge = pos_edge_index[:, batch_idx]
+            batch_pos_weight = pos_edge_weight[batch_idx]
             
             # Negative 샘플링
             neg_edge_index = negative_sampling(
                 edge_index=pos_edge_index,
                 num_nodes=(data['Compound'].num_nodes, data['Disease'].num_nodes),
-                num_neg_samples=batch_pos_edge.size(1),  # 🔧 배치 크기만큼
+                num_neg_samples=batch_pos_edge.size(1),
                 method='sparse'
             )
             
@@ -106,15 +105,18 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
             loss = criterion(out, edge_label)
             loss.backward()
             
+            # Gradient Clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer.step()
             
+            optimizer.step()
             total_loss += loss.item()
+            num_batches += 1
             
             # 메모리 정리
-            del out, edge_label, neg_edge_labels, edge_label_index
+            del out, edge_label, neg_edge_labels, edge_label_index, z_dict_new
         
-        if inner_epoch % 10 == 0:
+        # 주기적 메모리 정리
+        if inner_epoch % 20 == 0:
             gc.collect()
             torch.cuda.empty_cache()
     
@@ -122,15 +124,14 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
     with torch.no_grad():
         z_dict_final = model.encode(data, edge_index_dict, None)
     
-    # ✅ 수정 6: Loss 계산 수정
-    avg_loss = total_loss / (num_batches * num_inner_epochs)
+    avg_loss = total_loss / num_batches if num_batches > 0 else 0
     
     return torch.tensor(avg_loss), z_dict_final, pos_edge_index, pos_edge_weight
 
 
 @torch.no_grad()
 def test(data, model, split_edge_index, criterion):
-    """ 테스트/검증 - 동일 """
+    """ 테스트/검증 """
     model.eval()
     
     z_dict = model.encode(data, data.edge_index_dict, None)
@@ -138,20 +139,8 @@ def test(data, model, split_edge_index, criterion):
     pos_edge_index = split_edge_index['pos']
     neg_edge_index = split_edge_index['neg']
     
-    # 배치 처리
-    batch_size = 256
-    
-    pos_outs = []
-    for i in range(0, pos_edge_index.size(1), batch_size):
-        batch = pos_edge_index[:, i:i+batch_size]
-        pos_outs.append(model.decode(z_dict, batch))
-    pos_out = torch.cat(pos_outs)
-    
-    neg_outs = []
-    for i in range(0, neg_edge_index.size(1), batch_size):
-        batch = neg_edge_index[:, i:i+batch_size]
-        neg_outs.append(model.decode(z_dict, batch))
-    neg_out = torch.cat(neg_outs)
+    pos_out = model.decode(z_dict, pos_edge_index)
+    neg_out = model.decode(z_dict, neg_edge_index)
     
     out = torch.cat([pos_out, neg_out]).view(-1)
     edge_label = torch.cat([
@@ -176,23 +165,24 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
     compound_embeds = z_dict['Compound'].cpu()
     disease_embeds = z_dict['Disease'].cpu()
     
-    # ✅ 수정 7: Sigmoid 제거, 음수 infinity로 제외
-    prob_adj = compound_embeds @ disease_embeds.t()
+    # ✅ Raw scores 사용
+    raw_scores = compound_embeds @ disease_embeds.t()
     
+    # 기존 엣지 제외
     for split in ['train', 'val', 'test']:
         key_name = f'{split}_pos_edge_index'
         if key_name in data['Compound', 'treats', 'Disease']:
             edge_index = data['Compound', 'treats', 'Disease'][key_name].cpu()
-            prob_adj[edge_index[0], edge_index[1]] = -float('inf')  # 🔧 0 → -inf
+            raw_scores[edge_index[0], edge_index[1]] = -float('inf')
     
-    flat_probs = prob_adj.flatten()
-    top_k_indices = torch.topk(flat_probs, num_candidates).indices
+    flat_scores = raw_scores.flatten()
+    top_k_indices = torch.topk(flat_scores, num_candidates).indices
     
-    # ✅ 수정 8: 상위 결과만 Sigmoid 적용
-    top_k_probs = torch.sigmoid(flat_probs[top_k_indices])  # 🔧 여기서만 sigmoid
+    # ✅ 상위 결과만 Sigmoid
+    top_k_probs = torch.sigmoid(flat_scores[top_k_indices])
     
-    row_indices = top_k_indices // prob_adj.shape[1]
-    col_indices = top_k_indices % prob_adj.shape[1]
+    row_indices = top_k_indices // raw_scores.shape[1]
+    col_indices = top_k_indices % raw_scores.shape[1]
     
     compound_names = data.node_names['Compound']
     disease_names = data.node_names['Disease']
