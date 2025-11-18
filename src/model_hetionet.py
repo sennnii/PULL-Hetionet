@@ -7,11 +7,12 @@ class HeteroPULLModel(torch.nn.Module):
     """
     HGT + PULL 모델 (안정화 버전)
     """
-    def __init__(self, data, hidden_channels=128, out_channels=64, num_heads=4, num_layers=2):
+    def __init__(self, data, hidden_channels=128, out_channels=64, num_heads=4, num_layers=2, temperature=2.0):
         super().__init__()
 
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
+        self.temperature = temperature  # Temperature scaling for preventing saturation
         
         # 1. 초기 노드 임베딩
         self.node_embeds = nn.ModuleDict()
@@ -30,8 +31,8 @@ class HeteroPULLModel(torch.nn.Module):
         for node_type in data.node_types:
             self.lin_dict[node_type] = Linear(hidden_channels, out_channels)
         
-        # 4. Dropout
-        self.dropout = nn.Dropout(0.2)
+        # 4. Dropout (increased for better regularization)
+        self.dropout = nn.Dropout(0.3)
 
     def encode(self, data, edge_index_dict, edge_weight_dict=None):
         """ 노드 임베딩 생성 """
@@ -51,12 +52,15 @@ class HeteroPULLModel(torch.nn.Module):
         return z_dict
 
     def decode(self, z_dict, edge_label_index):
-        """ 엣지 예측 (Logits 반환) """
+        """ 엣지 예측 (Logits 반환) with temperature scaling """
         compound_embeds = z_dict['Compound'][edge_label_index[0]]
         disease_embeds = z_dict['Disease'][edge_label_index[1]]
         
         # ✅ 단순 내적 (안정적)
         logits = (compound_embeds * disease_embeds).sum(dim=-1)
+        
+        # ✅ Temperature scaling to prevent saturation
+        logits = logits / self.temperature
         
         # ✅ Clipping으로 안정화
         logits = torch.clamp(logits, min=-10, max=10)
@@ -64,12 +68,15 @@ class HeteroPULLModel(torch.nn.Module):
         return logits
 
     def decode_all(self, z_dict, train_edge_index, ratio, epoch):
-        """ PULL: 새로운 positive 엣지 발굴 """
+        """ PULL: 새로운 positive 엣지 발굴 with temperature scaling and weight clipping """
         compound_embeds = z_dict['Compound']
         disease_embeds = z_dict['Disease']
 
         # 내적 계산
         raw_scores = compound_embeds @ disease_embeds.t()
+        
+        # ✅ Temperature scaling
+        raw_scores = raw_scores / self.temperature
         
         # ✅ 학습된 엣지 마스킹
         raw_scores[train_edge_index[0], train_edge_index[1]] = -1e9
@@ -89,10 +96,12 @@ class HeteroPULLModel(torch.nn.Module):
         
         edge_index_add = torch.stack([row_indices, col_indices], dim=0)
         
-        # ✅ Weight 계산 (안정화)
+        # ✅ Weight 계산 with clipping (0.5-0.95 range)
         selected_scores = raw_scores[row_indices, col_indices]
         selected_scores = torch.clamp(selected_scores, min=-10, max=10)
         edge_weight_add = torch.sigmoid(selected_scores)
+        # Clip weights to prevent overconfidence
+        edge_weight_add = torch.clamp(edge_weight_add, min=0.5, max=0.95)
         
         return edge_index_add, edge_weight_add
 

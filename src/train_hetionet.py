@@ -27,10 +27,14 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
             
             # ✅ 핵심 수정: Raw scores 사용, -inf로 마스킹
             raw_scores = compound_embeds @ disease_embeds.t()
+            
+            # Apply temperature scaling (match model's temperature)
+            raw_scores = raw_scores / 2.0
+            
             raw_scores[train_edge_cpu[0], train_edge_cpu[1]] = -float('inf')
             
             n_edge = train_edge_cpu.shape[1]
-            n_edge_add = int(n_edge * 0.05 * (epoch - 1))  # ratio 증가
+            n_edge_add = int(n_edge * 0.03 * (epoch - 1))  # Reduced ratio from 0.05 to 0.03
             
             if n_edge_add > 0:
                 flat_scores = raw_scores.flatten()
@@ -42,9 +46,11 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
                 device = train_data[edge_type_to_predict].edge_index.device
                 pos_edge_index_add = torch.stack([row_indices, col_indices], dim=0).to(device)
                 
-                # Soft weight: 선택된 엣지에만 sigmoid
+                # Soft weight: 선택된 엣지에만 sigmoid with clipping
                 selected_scores = raw_scores[row_indices, col_indices]
-                pos_edge_weight_add = torch.sigmoid(selected_scores).to(device)
+                pos_edge_weight_add = torch.sigmoid(selected_scores)
+                # Clip weights to 0.5-0.95 range to prevent overconfidence
+                pos_edge_weight_add = torch.clamp(pos_edge_weight_add, min=0.5, max=0.95).to(device)
                 
                 print(f"  - PULL: {n_edge_add}개 엣지 추가됨 (평균 weight: {pos_edge_weight_add.mean():.4f})")
             else:
@@ -156,7 +162,7 @@ def test(data, model, split_edge_index, criterion):
 
 @torch.no_grad()
 def get_drug_repurposing_candidates(data, model, num_candidates=20):
-    """ 약물 재창출 후보 분석 """
+    """ 약물 재창출 후보 분석 with diversity algorithm """
     print("\n[약물 재창출 후보 분석 시작]")
     model.eval()
     
@@ -165,8 +171,9 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
     compound_embeds = z_dict['Compound'].cpu()
     disease_embeds = z_dict['Disease'].cpu()
     
-    # ✅ Raw scores 사용
+    # ✅ Raw scores 사용 with temperature scaling
     raw_scores = compound_embeds @ disease_embeds.t()
+    raw_scores = raw_scores / 2.0  # Apply temperature scaling
     
     # 기존 엣지 제외
     for split in ['train', 'val', 'test']:
@@ -175,10 +182,12 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
             edge_index = data['Compound', 'treats', 'Disease'][key_name].cpu()
             raw_scores[edge_index[0], edge_index[1]] = -float('inf')
     
+    # Get more candidates initially for diversity filtering
+    initial_candidates = num_candidates * 10
     flat_scores = raw_scores.flatten()
-    top_k_indices = torch.topk(flat_scores, num_candidates).indices
+    top_k_indices = torch.topk(flat_scores, initial_candidates).indices
     
-    # ✅ 상위 결과만 Sigmoid
+    # ✅ Calculate probabilities
     top_k_probs = torch.sigmoid(flat_scores[top_k_indices])
     
     row_indices = top_k_indices // raw_scores.shape[1]
@@ -187,12 +196,45 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
     compound_names = data.node_names['Compound']
     disease_names = data.node_names['Disease']
     
-    print("\n--- 새로운 약물 재창출 후보 Top 20 ---")
-    for i in range(num_candidates):
+    # ✅ Diversity algorithm: max 3 per disease, filter prob > 0.99
+    disease_count = {}
+    final_candidates = []
+    max_per_disease = 3
+    
+    for i in range(initial_candidates):
         compound_idx = row_indices[i].item()
         disease_idx = col_indices[i].item()
         prob = top_k_probs[i].item()
         
-        print(f"{i+1:02d}. [약물] {compound_names[compound_idx]} -> [질병] {disease_names[disease_idx]} (예측 확률: {prob:.4f})")
+        # Filter out overconfident predictions
+        if prob >= 0.99:
+            continue
+            
+        disease_name = disease_names[disease_idx]
+        
+        # Check diversity constraint
+        if disease_count.get(disease_name, 0) >= max_per_disease:
+            continue
+            
+        disease_count[disease_name] = disease_count.get(disease_name, 0) + 1
+        final_candidates.append({
+            'compound_idx': compound_idx,
+            'disease_idx': disease_idx,
+            'compound_name': compound_names[compound_idx],
+            'disease_name': disease_name,
+            'prob': prob,
+            'raw_score': flat_scores[top_k_indices[i]].item()
+        })
+        
+        if len(final_candidates) >= num_candidates:
+            break
+    
+    # Sort by raw score (descending)
+    final_candidates.sort(key=lambda x: x['raw_score'], reverse=True)
+    
+    print("\n--- 새로운 약물 재창출 후보 Top 20 (다양성 보장) ---")
+    print(f"필터링: 예측 확률 >= 0.99 제외, 질병당 최대 {max_per_disease}개")
+    for i, candidate in enumerate(final_candidates[:num_candidates]):
+        print(f"{i+1:02d}. [약물] {candidate['compound_name']} -> [질병] {candidate['disease_name']} (예측 확률: {candidate['prob']:.4f})")
     
     return

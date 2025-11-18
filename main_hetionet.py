@@ -21,7 +21,8 @@ def parse_args():
     parser.add_argument('--out_dim', type=int, default=64)
     parser.add_argument('--heads', type=int, default=4, help="HGT의 Attention Head 수")
     parser.add_argument('--layers', type=int, default=2, help="HGT 레이어 수")
-    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--temperature', type=float, default=2.0, help="Temperature scaling for prediction")
+    parser.add_argument('--lr', type=float, default=0.005)
     parser.add_argument('--verbose', type=str, default="y")
     return parser.parse_args()
 
@@ -127,7 +128,8 @@ def main():
         hidden_channels=args.hidden_dim,
         out_channels=args.out_dim,
         num_heads=args.heads,
-        num_layers=args.layers
+        num_layers=args.layers,
+        temperature=args.temperature
     ).to(device)
 
     optimizer = torch.optim.Adam(params=model.parameters(), lr=args.lr)
