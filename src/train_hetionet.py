@@ -19,7 +19,7 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
         pos_edge_index_add, pos_edge_weight_add = model.decode_all(
             z_dict, 
             train_data[edge_type_to_predict].edge_index, 
-            ratio=0.05,
+            ratio=0.02,  # 🆕 0.05 → 0.02로 감소
             epoch=epoch
         )
         
@@ -37,8 +37,8 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
         edge_index_dict = train_data.edge_index_dict.copy()
         edge_index_dict[edge_type_to_predict] = pos_edge_index
 
-    # 모델 학습 (Inner Loop)
-    for inner_epoch in range(1, 101): # 시간 단축을 위해 100번
+    # 🆕 모델 학습 (Inner Loop 감소: 100 → 50)
+    for inner_epoch in range(1, 51):
         model.train()
         optimizer.zero_grad()
 
@@ -58,6 +58,10 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
 
         loss = criterion(out, edge_label)
         loss.backward()
+        
+        # 🆕 Gradient Clipping (gradient exploding 방지)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        
         optimizer.step()
 
     return loss, z_dict_new, pos_edge_index, pos_edge_weight
@@ -83,7 +87,9 @@ def test(data, model, split_edge_index, criterion):
     ], dim=0).to(out.device)
     
     loss = criterion(out, edge_label)
-    auc = roc_auc_score(edge_label.cpu().numpy(), out.cpu().numpy())
+    # 🆕 Sigmoid 적용 (AUC 계산용)
+    out_sigmoid = torch.sigmoid(out)
+    auc = roc_auc_score(edge_label.cpu().numpy(), out_sigmoid.cpu().numpy())
     
     return loss, auc
 
@@ -98,18 +104,20 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
     compound_embeds = z_dict['Compound']
     disease_embeds = z_dict['Disease']
     
-    prob_adj = torch.sigmoid(compound_embeds @ disease_embeds.t())
+    # 🆕 내적 계산 (sigmoid는 나중에)
+    prob_adj = compound_embeds @ disease_embeds.t()
     
     # 훈련/검증/테스트에 이미 사용된 엣지는 후보에서 제외
     for split in ['train', 'val', 'test']:
-        key_name = 'edge_index' if split == 'train' else 'pos_edge_index'
+        key_name = f'{split}_pos_edge_index'
         if key_name in data['Compound', 'treats', 'Disease']:
             edge_index = data['Compound', 'treats', 'Disease'][key_name]
-            prob_adj[edge_index[0], edge_index[1]] = 0 
+            prob_adj[edge_index[0], edge_index[1]] = -float('inf')
         
     flat_probs = prob_adj.flatten()
     top_k_indices = torch.topk(flat_probs, num_candidates).indices
-    top_k_probs = flat_probs[top_k_indices]
+    # 🆕 Sigmoid 적용
+    top_k_probs = torch.sigmoid(flat_probs[top_k_indices])
 
     row_indices = top_k_indices // prob_adj.shape[1]
     col_indices = top_k_indices % prob_adj.shape[1]
