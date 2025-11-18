@@ -155,7 +155,7 @@ def main():
             # 테스트
             test_loss, test_auc = test(data, model, test_edges, criterion)
         else:
-            if epoch > 1: 
+            if epoch >= 10: 
                 print(f"Epoch: {epoch:02d}, Val AUC가 ({val_auc:.4f}) 이전 최고({best_val_auc:.4f})보다 낮아 조기 종료합니다.")
                 break
 
