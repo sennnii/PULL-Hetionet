@@ -2,11 +2,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import HGTConv, Linear
-from torch_geometric.utils import degree
 
 class HeteroPULLModel(torch.nn.Module):
     """
-    HGT(Heterogeneous Graph Transformer)를 PULL 로직과 결합한 모델
+    HGT + PULL 모델 (안정화 버전)
     """
     def __init__(self, data, hidden_channels=128, out_channels=64, num_heads=4, num_layers=2):
         super().__init__()
@@ -20,65 +19,60 @@ class HeteroPULLModel(torch.nn.Module):
             num_nodes = data[node_type].num_nodes
             self.node_embeds[node_type] = nn.Embedding(num_nodes, hidden_channels)
 
-        # 2. 이종 GNN (HGT) 레이어
+        # 2. HGT 레이어
         self.convs = nn.ModuleList()
         for _ in range(num_layers):
             conv = HGTConv(hidden_channels, hidden_channels, data.metadata(), num_heads)
             self.convs.append(conv)
             
-        # 3. 최종 출력용 Linear 레이어
+        # 3. 출력 Linear
         self.lin_dict = nn.ModuleDict()
         for node_type in data.node_types:
             self.lin_dict[node_type] = Linear(hidden_channels, out_channels)
         
-        # 4. Dropout (과적합 방지)
-        self.dropout = nn.Dropout(0.2)  # ✅ 0.3 → 0.2로 감소
-        
-        # ✅ 5. Decode MLP 추가 (더 나은 표현력)
-        self.decode_mlp = nn.Sequential(
-            nn.Linear(out_channels * 2, out_channels),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(out_channels, 1)
-        )
+        # 4. Dropout
+        self.dropout = nn.Dropout(0.2)
 
     def encode(self, data, edge_index_dict, edge_weight_dict=None):
-        """ GNN을 통과시켜 모든 노드의 최종 임베딩(z)을 계산 """
+        """ 노드 임베딩 생성 """
         x_dict = {}
         for node_type, embed_layer in self.node_embeds.items():
             x_dict[node_type] = embed_layer.weight
             
         for conv in self.convs:
             x_dict = conv(x_dict, edge_index_dict)
-            # Dropout 적용
             for node_type in x_dict.keys():
-                x_dict[node_type] = self.dropout(x_dict[node_type])
+                x_dict[node_type] = self.dropout(F.relu(x_dict[node_type]))
             
         z_dict = {}
         for node_type, lin in self.lin_dict.items():
             z_dict[node_type] = lin(x_dict[node_type])
-            # ❌ L2 정규화 제거!
-            # z_dict[node_type] = F.normalize(z_dict[node_type], p=2, dim=-1)
             
         return z_dict
 
     def decode(self, z_dict, edge_label_index):
-        """ 'treats' 관계의 존재 확률을 계산 """
+        """ 엣지 예측 (Logits 반환) """
         compound_embeds = z_dict['Compound'][edge_label_index[0]]
         disease_embeds = z_dict['Disease'][edge_label_index[1]]
         
-        # ✅ 개선: MLP 사용 (더 복잡한 패턴 학습)
-        concat = torch.cat([compound_embeds, disease_embeds], dim=-1)
-        return self.decode_mlp(concat).squeeze(-1)
+        # ✅ 단순 내적 (안정적)
+        logits = (compound_embeds * disease_embeds).sum(dim=-1)
+        
+        # ✅ Clipping으로 안정화
+        logits = torch.clamp(logits, min=-10, max=10)
+        
+        return logits
 
     def decode_all(self, z_dict, train_edge_index, ratio, epoch):
-        """ PULL 로직: 'Unlabeled'에서 Top-K 후보(새로운 P)를 발굴 """
+        """ PULL: 새로운 positive 엣지 발굴 """
         compound_embeds = z_dict['Compound']
         disease_embeds = z_dict['Disease']
 
-        # ✅ 내적 계산 (정규화 없음)
+        # 내적 계산
         raw_scores = compound_embeds @ disease_embeds.t()
-        raw_scores[train_edge_index[0], train_edge_index[1]] = -float('inf')
+        
+        # ✅ 학습된 엣지 마스킹
+        raw_scores[train_edge_index[0], train_edge_index[1]] = -1e9
         
         n_edge = train_edge_index.shape[1]
         n_edge_add = int(n_edge * ratio * (epoch - 1))
@@ -95,14 +89,15 @@ class HeteroPULLModel(torch.nn.Module):
         
         edge_index_add = torch.stack([row_indices, col_indices], dim=0)
         
-        # ✅ Soft weight: 선택된 엣지의 raw score에만 sigmoid
+        # ✅ Weight 계산 (안정화)
         selected_scores = raw_scores[row_indices, col_indices]
+        selected_scores = torch.clamp(selected_scores, min=-10, max=10)
         edge_weight_add = torch.sigmoid(selected_scores)
         
         return edge_index_add, edge_weight_add
 
     def merge_edge(self, edge_index, edge_weight, edge_index_add, edge_weight_add):
-        """ 새 P 엣지를 기존 엣지 리스트에 추가 """
+        """ 엣지 병합 """
         edge_index = torch.cat((edge_index, edge_index_add), 1)
         edge_weight = torch.cat((edge_weight, edge_weight_add))
         return edge_index, edge_weight
