@@ -31,8 +31,16 @@ class HeteroPULLModel(torch.nn.Module):
         for node_type in data.node_types:
             self.lin_dict[node_type] = Linear(hidden_channels, out_channels)
         
-        # 🆕 4. Dropout 추가 (과적합 방지)
-        self.dropout = nn.Dropout(0.3)
+        # 4. Dropout (과적합 방지)
+        self.dropout = nn.Dropout(0.2)  # ✅ 0.3 → 0.2로 감소
+        
+        # ✅ 5. Decode MLP 추가 (더 나은 표현력)
+        self.decode_mlp = nn.Sequential(
+            nn.Linear(out_channels * 2, out_channels),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(out_channels, 1)
+        )
 
     def encode(self, data, edge_index_dict, edge_weight_dict=None):
         """ GNN을 통과시켜 모든 노드의 최종 임베딩(z)을 계산 """
@@ -42,15 +50,15 @@ class HeteroPULLModel(torch.nn.Module):
             
         for conv in self.convs:
             x_dict = conv(x_dict, edge_index_dict)
-            # 🆕 Dropout 적용
+            # Dropout 적용
             for node_type in x_dict.keys():
                 x_dict[node_type] = self.dropout(x_dict[node_type])
             
         z_dict = {}
         for node_type, lin in self.lin_dict.items():
             z_dict[node_type] = lin(x_dict[node_type])
-            # 🆕 L2 정규화 (임베딩 크기 제한)
-            z_dict[node_type] = F.normalize(z_dict[node_type], p=2, dim=-1)
+            # ❌ L2 정규화 제거!
+            # z_dict[node_type] = F.normalize(z_dict[node_type], p=2, dim=-1)
             
         return z_dict
 
@@ -58,35 +66,38 @@ class HeteroPULLModel(torch.nn.Module):
         """ 'treats' 관계의 존재 확률을 계산 """
         compound_embeds = z_dict['Compound'][edge_label_index[0]]
         disease_embeds = z_dict['Disease'][edge_label_index[1]]
-        # 🆕 내적 결과를 직접 반환 (sigmoid는 loss 함수에서)
-        return (compound_embeds * disease_embeds).sum(dim=-1)
+        
+        # ✅ 개선: MLP 사용 (더 복잡한 패턴 학습)
+        concat = torch.cat([compound_embeds, disease_embeds], dim=-1)
+        return self.decode_mlp(concat).squeeze(-1)
 
     def decode_all(self, z_dict, train_edge_index, ratio, epoch):
         """ PULL 로직: 'Unlabeled'에서 Top-K 후보(새로운 P)를 발굴 """
         compound_embeds = z_dict['Compound']
         disease_embeds = z_dict['Disease']
 
-        # 🆕 내적 계산 (sigmoid 제거)
-        prob_adj = compound_embeds @ disease_embeds.t()
-        prob_adj[train_edge_index[0], train_edge_index[1]] = -float('inf')  # 훈련 엣지 제외
+        # ✅ 내적 계산 (정규화 없음)
+        raw_scores = compound_embeds @ disease_embeds.t()
+        raw_scores[train_edge_index[0], train_edge_index[1]] = -float('inf')
         
         n_edge = train_edge_index.shape[1]
-        # 🆕 ratio 감소 (0.05 → 0.02)
-        n_edge_add = int(n_edge * ratio * 0.4 * (epoch - 1))  # 더 보수적으로
+        n_edge_add = int(n_edge * ratio * (epoch - 1))
         
         if n_edge_add == 0:
-            return torch.tensor([[],[]], dtype=torch.long, device=prob_adj.device), \
-                   torch.tensor([], device=prob_adj.device)
+            return torch.tensor([[],[]], dtype=torch.long, device=raw_scores.device), \
+                   torch.tensor([], device=raw_scores.device)
                    
-        flat_probs = prob_adj.flatten()
-        top_k_indices = torch.topk(flat_probs, n_edge_add).indices
+        flat_scores = raw_scores.flatten()
+        top_k_indices = torch.topk(flat_scores, n_edge_add).indices
         
-        row_indices = top_k_indices // prob_adj.shape[1]
-        col_indices = top_k_indices % prob_adj.shape[1]
+        row_indices = top_k_indices // raw_scores.shape[1]
+        col_indices = top_k_indices % raw_scores.shape[1]
         
         edge_index_add = torch.stack([row_indices, col_indices], dim=0)
-        # 🆕 Soft weight (0~1 범위로 정규화)
-        edge_weight_add = torch.sigmoid(prob_adj[row_indices, col_indices])
+        
+        # ✅ Soft weight: 선택된 엣지의 raw score에만 sigmoid
+        selected_scores = raw_scores[row_indices, col_indices]
+        edge_weight_add = torch.sigmoid(selected_scores)
         
         return edge_index_add, edge_weight_add
 
