@@ -1,0 +1,141 @@
+nohup: ignoring input
+사용 장치: cuda:0
+전처리된 Hetionet 데이터 로드 중...
+데이터 분할 중 (Train/Val/Test)...
+  - Validation negative 샘플 생성 중...
+  - Test negative 샘플 생성 중...
+
+[데이터 로드 완료]
+학습용 'treats' 엣지: 605
+검증용 'treats' 엣지 (Pos): 150
+검증용 'treats' 엣지 (Neg): 150
+테스트용 'treats' 엣지 (Pos): 150
+테스트용 'treats' 엣지 (Neg): 150
+  [Model] Anatomy: Emb 402 -> Hidden 128
+  [Model] Biological Process: Emb 11381 -> Hidden 128
+  [Model] Cellular Component: Emb 1391 -> Hidden 128
+  [Model] Compound: Feat 512 -> Hidden 128
+  [Model] Disease: Emb 137 -> Hidden 128
+  [Model] Gene: Emb 20945 -> Hidden 128
+  [Model] Molecular Function: Emb 2884 -> Hidden 128
+  [Model] Pathway: Emb 1822 -> Hidden 128
+  [Model] Pharmacologic Class: Emb 345 -> Hidden 128
+  [Model] Side Effect: Emb 5734 -> Hidden 128
+  [Model] Symptom: Emb 438 -> Hidden 128
+
+[PULL 모델 학습 시작]
+Epoch: 01, Loss: 0.2906, Val AUC: 0.7170, Test AUC: 0.7319 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 30개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 02, Loss: 0.1335, Val AUC: 0.7208, Test AUC: 0.7328 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 60개 엣지 추가 (Avg Weight: 0.9997)
+Epoch: 03, Loss: 0.1131, Val AUC: 0.7244, Test AUC: 0.7434 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 90개 엣지 추가 (Avg Weight: 0.9998)
+Epoch: 04, Loss: 0.0982, Val AUC: 0.7267, Test AUC: 0.7502 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 121개 엣지 추가 (Avg Weight: 0.9998)
+Epoch: 05, Loss: 0.0857, Val AUC: 0.7299, Test AUC: 0.7551 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 151개 엣지 추가 (Avg Weight: 0.9990)
+Epoch: 06, Loss: 0.0734, Val AUC: 0.7292, Test AUC: 0.7551 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 181개 엣지 추가 (Avg Weight: 0.9997)
+Epoch: 07, Loss: 0.0628, Val AUC: 0.7267, Test AUC: 0.7551 (Patience: 2/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 211개 엣지 추가 (Avg Weight: 0.9999)
+Epoch: 08, Loss: 0.0545, Val AUC: 0.7268, Test AUC: 0.7551 (Patience: 3/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 242개 엣지 추가 (Avg Weight: 0.9999)
+Epoch: 09, Loss: 0.0482, Val AUC: 0.7419, Test AUC: 0.7668 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 272개 엣지 추가 (Avg Weight: 0.9999)
+Epoch: 10, Loss: 0.0436, Val AUC: 0.7376, Test AUC: 0.7668 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 302개 엣지 추가 (Avg Weight: 0.9999)
+Epoch: 11, Loss: 0.0439, Val AUC: 0.7340, Test AUC: 0.7668 (Patience: 2/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 332개 엣지 추가 (Avg Weight: 0.9996)
+Epoch: 12, Loss: 0.0419, Val AUC: 0.7276, Test AUC: 0.7668 (Patience: 3/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 363개 엣지 추가 (Avg Weight: 0.9998)
+Epoch: 13, Loss: 0.0358, Val AUC: 0.7261, Test AUC: 0.7668 (Patience: 4/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 393개 엣지 추가 (Avg Weight: 0.9997)
+Epoch: 14, Loss: 0.0344, Val AUC: 0.7256, Test AUC: 0.7668 (Patience: 5/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 423개 엣지 추가 (Avg Weight: 0.9991)
+Epoch: 15, Loss: 0.0362, Val AUC: 0.7140, Test AUC: 0.7668 (Patience: 6/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 453개 엣지 추가 (Avg Weight: 0.9998)
+Epoch: 16, Loss: 0.0339, Val AUC: 0.7178, Test AUC: 0.7668 (Patience: 7/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 484개 엣지 추가 (Avg Weight: 0.9995)
+Epoch: 17, Loss: 0.0323, Val AUC: 0.7181, Test AUC: 0.7668 (Patience: 8/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 514개 엣지 추가 (Avg Weight: 0.9997)
+Epoch: 18, Loss: 0.0315, Val AUC: 0.7156, Test AUC: 0.7668 (Patience: 9/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 544개 엣지 추가 (Avg Weight: 0.9998)
+Epoch: 19, Loss: 0.0308, Val AUC: 0.7142, Test AUC: 0.7668 (Patience: 10/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 574개 엣지 추가 (Avg Weight: 0.9995)
+Epoch: 20, Loss: 0.0314, Val AUC: 0.7160, Test AUC: 0.7668 (Patience: 11/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 605개 엣지 추가 (Avg Weight: 0.9992)
+Epoch: 21, Loss: 0.0295, Val AUC: 0.7205, Test AUC: 0.7668 (Patience: 12/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 635개 엣지 추가 (Avg Weight: 0.9996)
+Epoch: 22, Loss: 0.0301, Val AUC: 0.7320, Test AUC: 0.7668 (Patience: 13/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 665개 엣지 추가 (Avg Weight: 0.9993)
+Epoch: 23, Loss: 0.0280, Val AUC: 0.7352, Test AUC: 0.7668 (Patience: 14/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 695개 엣지 추가 (Avg Weight: 0.9992)
+Epoch: 24, Loss: 0.0275, Val AUC: 0.7389, Test AUC: 0.7668 (Patience: 15/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 726개 엣지 추가 (Avg Weight: 0.9990)
+Epoch: 25, Loss: 0.0235, Val AUC: 0.7287, Test AUC: 0.7668 (Patience: 16/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 756개 엣지 추가 (Avg Weight: 0.9985)
+Epoch: 26, Loss: 0.0244, Val AUC: 0.7312, Test AUC: 0.7668 (Patience: 17/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 786개 엣지 추가 (Avg Weight: 0.9997)
+Epoch: 27, Loss: 0.0271, Val AUC: 0.7283, Test AUC: 0.7668 (Patience: 18/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 816개 엣지 추가 (Avg Weight: 0.9993)
+Epoch: 28, Loss: 0.0259, Val AUC: 0.7279, Test AUC: 0.7668 (Patience: 19/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 847개 엣지 추가 (Avg Weight: 0.9996)
+Early Stopping: 20 Epoch 동안 성능 향상이 없어 조기 종료합니다.
+
+[학습 완료]
+Best Epoch: 09, Val AUC: 0.7419, Test AUC: 0.7668
+총 학습 시간: 147.26s
+
+[약물 재창출 후보 분석 시작]
+[디버깅] Raw scores (마스킹 전):
+  - 최소: -55.6363, 최대: 14.9778
+
+--- 새로운 약물 재창출 후보 Top 20 ---
+01. [약물] Nelarabine -> [질병] breast cancer (확률: 1.0000)
+02. [약물] Clofarabine -> [질병] breast cancer (확률: 1.0000)
+03. [약물] Ruxolitinib -> [질병] breast cancer (확률: 1.0000)
+04. [약물] Fulvestrant -> [질병] hematologic cancer (확률: 1.0000)
+05. [약물] Doxorubicin -> [질병] colon cancer (확률: 1.0000)
+06. [약물] Anastrozole -> [질병] hematologic cancer (확률: 1.0000)
+07. [약물] Epirubicin -> [질병] colon cancer (확률: 1.0000)
+08. [약물] Fluoxymesterone -> [질병] hematologic cancer (확률: 1.0000)
+09. [약물] Pirbuterol -> [질병] hypertension (확률: 1.0000)
+10. [약물] Methotrexate -> [질병] sarcoma (확률: 1.0000)
+11. [약물] Doxazosin -> [질병] asthma (확률: 1.0000)
+12. [약물] Primidone -> [질병] hypertension (확률: 1.0000)
+13. [약물] Doxorubicin -> [질병] esophageal cancer (확률: 1.0000)
+14. [약물] Epirubicin -> [질병] esophageal cancer (확률: 1.0000)
+15. [약물] Amlodipine -> [질병] asthma (확률: 1.0000)
+16. [약물] Nicardipine -> [질병] glaucoma (확률: 1.0000)
+17. [약물] Doxazosin -> [질병] glaucoma (확률: 1.0000)
+18. [약물] Isradipine -> [질병] asthma (확률: 1.0000)
+19. [약물] Carteolol -> [질병] hypertension (확률: 1.0000)
+20. [약물] Doxorubicin -> [질병] germ cell cancer (확률: 1.0000)

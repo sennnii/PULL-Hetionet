@@ -130,6 +130,7 @@ def main():
         num_layers=args.layers,
     ).to(device)
 
+    # [중요] Weight Decay 추가 확인됨
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
     criterion = BCEWithLogitsLoss()
 
@@ -138,6 +139,9 @@ def main():
     best_val_auc = test_auc = 0
     best_epoch = 0
     z_dict = None 
+    
+    patience = 20  # 성능이 안 올라도 20번은 기다림
+    patience_counter = 0 
 
     start_time = time.time()
     for epoch in range(1, args.epochs + 1):
@@ -154,14 +158,16 @@ def main():
             best_epoch = epoch
             # 테스트
             test_loss, test_auc = test(data, model, test_edges, criterion)
+            patience_counter = 0 # 신기록 달성 시 카운터 초기화
         else:
-            if epoch >= 10: 
-                print(f"Epoch: {epoch:02d}, Val AUC가 ({val_auc:.4f}) 이전 최고({best_val_auc:.4f})보다 낮아 조기 종료합니다.")
+            patience_counter += 1 # 실패 시 카운터 증가
+            if patience_counter >= patience:
+                print(f"Early Stopping: {patience} Epoch 동안 성능 향상이 없어 조기 종료합니다.")
                 break
 
         epoch_time = time.time() - epoch_start_time
         if args.verbose == 'y':
-            print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val AUC: {val_auc:.4f}, Test AUC: {test_auc:.4f} (Time: {epoch_time:.2f}s)')
+            print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val AUC: {val_auc:.4f}, Test AUC: {test_auc:.4f} (Patience: {patience_counter}/{patience})')
         
     print("\n[학습 완료]")
     print(f'Best Epoch: {best_epoch:02d}, Val AUC: {best_val_auc:.4f}, Test AUC: {test_auc:.4f}')
