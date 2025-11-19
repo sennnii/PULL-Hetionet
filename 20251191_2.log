@@ -1,0 +1,71 @@
+nohup: ignoring input
+사용 장치: cuda:0
+전처리된 Hetionet 데이터 로드 중...
+데이터 분할 중 (Train/Val/Test)...
+  - Validation negative 샘플 생성 중...
+  - Test negative 샘플 생성 중...
+
+[데이터 로드 완료]
+학습용 'treats' 엣지: 605
+검증용 'treats' 엣지 (Pos): 150
+검증용 'treats' 엣지 (Neg): 150
+테스트용 'treats' 엣지 (Pos): 150
+테스트용 'treats' 엣지 (Neg): 150
+
+[PULL 모델 학습 시작]
+Epoch: 01, Loss: 0.1793, Val AUC: 0.7293, Test AUC: 0.7433 (Time: 110.24s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 12개 엣지 추가됨 (평균 weight: 0.5400)
+Epoch: 02, Loss: 0.1509, Val AUC: 0.7279, Test AUC: 0.7433 (Time: 108.98s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 24개 엣지 추가됨 (평균 weight: 0.5413)
+Epoch: 03, Loss: 0.1837, Val AUC: 0.7132, Test AUC: 0.7433 (Time: 109.62s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 36개 엣지 추가됨 (평균 weight: 0.5411)
+Epoch: 04, Loss: 0.1982, Val AUC: 0.6973, Test AUC: 0.7433 (Time: 108.68s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 48개 엣지 추가됨 (평균 weight: 0.5417)
+Epoch: 05, Loss: 0.1999, Val AUC: 0.7060, Test AUC: 0.7433 (Time: 109.06s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 60개 엣지 추가됨 (평균 weight: 0.5396)
+Epoch: 06, Loss: 0.2010, Val AUC: 0.6967, Test AUC: 0.7433 (Time: 109.08s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 72개 엣지 추가됨 (평균 weight: 0.5431)
+Epoch: 07, Loss: 0.2057, Val AUC: 0.7050, Test AUC: 0.7433 (Time: 108.64s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 84개 엣지 추가됨 (평균 weight: 0.5436)
+Epoch: 08, Loss: 0.2048, Val AUC: 0.7023, Test AUC: 0.7433 (Time: 108.68s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 96개 엣지 추가됨 (평균 weight: 0.5438)
+Epoch: 09, Loss: 0.2223, Val AUC: 0.7096, Test AUC: 0.7433 (Time: 109.25s)
+  - PULL: 새로운 positive 엣지 탐색 중... (CPU)
+  - PULL: 108개 엣지 추가됨 (평균 weight: 0.5443)
+Epoch: 10, Val AUC가 (0.7094) 이전 최고(0.7293)보다 낮아 조기 종료합니다.
+
+[학습 완료]
+Best Epoch: 01, Val AUC: 0.7293, Test AUC: 0.7433
+총 학습 시간: 1091.22s
+
+[약물 재창출 후보 분석 시작]
+[디버깅] Raw scores (정규화 후, cosine similarity):
+  - 최소: -0.8142
+  - 최대: 0.8532
+  - 평균: -0.2766
+[디버깅] 상위 200개 확률 통계:
+  - 최소: 0.7012
+  - 최대: 0.7012
+  - 평균: 0.7012
+  - 중간값: 0.7012
+  - 0.99 이상 개수: 0/200
+  - 0.95 이상 개수: 0/200
+  - 0.90 이상 개수: 0/200
+
+[필터링 통계]
+  - 0.97 이상으로 필터링된 후보: 0개
+  - 다양성 필터 통과: 3개
+
+--- 새로운 약물 재창출 후보 Top 20 (다양성 보장) ---
+필터링: 예측 확률 >= 0.97 제외, 질병당 최대 3개
+01. [약물] Sunitinib -> [질병] psoriatic arthritis (예측 확률: 0.7012)
+02. [약물] Calcium Acetate -> [질병] psoriatic arthritis (예측 확률: 0.7012)
+03. [약물] Ifosfamide -> [질병] psoriatic arthritis (예측 확률: 0.7012)

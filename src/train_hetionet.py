@@ -32,7 +32,7 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
 
             # Cosine similarity
             raw_scores = compound_embeds @ disease_embeds.t()
-            raw_scores = raw_scores / 0.1  # Temperature 0.1
+            raw_scores = raw_scores / 1.0  # Temperature 0.1
 
             # ✅ 핵심 수정: Raw scores 사용, -inf로 마스킹
             raw_scores = compound_embeds @ disease_embeds.t()
@@ -194,7 +194,7 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
     print(f"  - 평균: {raw_scores[raw_scores != -float('inf')].mean():.4f}")
     
     # Temperature scaling
-    raw_scores = raw_scores / 0.1  # Temperature 0.1 (작을수록 sharp)
+    raw_scores = raw_scores / 1.0
     
     # 기존 엣지 제외
     for split in ['train', 'val', 'test']:
@@ -239,8 +239,7 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
         disease_idx = col_indices[i].item()
         prob = top_k_probs[i].item()
         
-        # 🔥 필터 조건 완화 (0.98 → 0.97)
-        if prob >= 0.97:
+        if prob >= 0.90:
             filtered_count += 1
             continue
             
