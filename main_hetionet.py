@@ -130,7 +130,7 @@ def main():
         num_layers=args.layers,
     ).to(device)
 
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
     criterion = BCEWithLogitsLoss()
 
     # 4. PULL 학습 시작
