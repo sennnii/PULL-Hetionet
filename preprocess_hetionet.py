@@ -8,6 +8,9 @@ import torch
 import pandas as pd
 from torch_geometric.data import HeteroData
 from tqdm import tqdm
+from rdkit import Chem
+from rdkit.Chem import AllChem
+import numpy as np
 
 def load_hetionet_json():
     """ hetionet-v1.0.json.bz2 파일을 로드합니다. """
@@ -33,6 +36,49 @@ def load_hetionet_json():
     print(f"  - 전체 엣지 수: {len(data.get('edges', []))}")
     
     return data
+
+def get_compound_features(hetionet_data):
+    """Compound 노드의 Morgan Fingerprint 생성 (InChI 사용)"""
+    print("\n[약물 분자 특징 추가]")
+    
+    compounds = [n for n in hetionet_data['nodes'] if n['kind'] == 'Compound']
+    
+    features = []
+    valid_count = 0
+    failed_compounds = []
+    
+    for compound in tqdm(compounds, desc="Morgan Fingerprint 생성"):
+        try:
+            # InChI에서 분자 생성
+            inchi = compound.get('data', {}).get('inchi', None)
+            
+            if inchi:
+                mol = Chem.MolFromInchi(inchi)
+                
+                if mol:
+                    # 512-bit Morgan Fingerprint (radius=2)
+                    fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=512)
+                    features.append(np.array(fp, dtype=np.float32))
+                    valid_count += 1
+                else:
+                    # InChI 파싱 실패
+                    features.append(np.zeros(512, dtype=np.float32))
+                    failed_compounds.append(compound['name'])
+            else:
+                # InChI 없음
+                features.append(np.zeros(512, dtype=np.float32))
+                failed_compounds.append(compound['name'])
+        except Exception as e:
+            # 예외 발생
+            features.append(np.zeros(512, dtype=np.float32))
+            failed_compounds.append(f"{compound['name']} (Error: {str(e)})")
+    
+    print(f"  ✓ 유효 분자: {valid_count}/{len(compounds)} ({valid_count/len(compounds)*100:.1f}%)")
+    
+    if failed_compounds[:5]:  # 처음 5개만 출력
+        print(f"  ⚠ 실패한 분자 샘플: {failed_compounds[:5]}")
+    
+    return torch.FloatTensor(features)
 
 def validate_data_structure(hetionet_data):
     """ 데이터 구조를 검증하고 통계를 출력합니다. """
@@ -184,7 +230,19 @@ def preprocess_hetionet(hetionet_data):
         data[edge_tuple].edge_index = torch.tensor([src_list, dst_list], dtype=torch.long)
 
     print(f"    총 {len(edge_data)}개 엣지 타입 생성")
-
+    # 2.5. 약물 분자 특징 생성
+    print("  - 2.5/4: 약물 분자 특징 생성 중...")
+    compound_features = get_compound_features(hetionet_data)
+    data['Compound'].x = compound_features
+    print(f"    ✓ Compound 특징 shape: {compound_features.shape}")
+    
+    # 2.6. 질병 One-hot 특징 생성
+    print("  - 2.6/4: 질병 특징 생성 중...")
+    disease_count = data['Disease'].num_nodes
+    disease_features = torch.eye(disease_count, dtype=torch.float32)
+    data['Disease'].x = disease_features
+    print(f"    ✓ Disease 특징 shape: {disease_features.shape}")
+    
     # 3. ID-이름 매핑 저장
     print("  - 3/4: ID-이름 매핑 저장 중...")
     data.node_names = {}
