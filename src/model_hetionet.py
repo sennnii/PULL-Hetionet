@@ -32,7 +32,7 @@ class HeteroPULLModel(torch.nn.Module):
             self.lin_dict[node_type] = Linear(hidden_channels, out_channels)
         
         # 4. Dropout (increased for better regularization)
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.4)
 
     def encode(self, data, edge_index_dict, edge_weight_dict=None):
         """ 노드 임베딩 생성 """
@@ -51,20 +51,14 @@ class HeteroPULLModel(torch.nn.Module):
             
         return z_dict
 
-    def decode(self, z_dict, edge_label_index):
-        """ 엣지 예측 (Logits 반환) with temperature scaling """
+    def decode(self, z_dict, edge_label_index, temperature=5.0):
         compound_embeds = z_dict['Compound'][edge_label_index[0]]
         disease_embeds = z_dict['Disease'][edge_label_index[1]]
         
-        # ✅ 단순 내적 (안정적)
         logits = (compound_embeds * disease_embeds).sum(dim=-1)
-        
-        # ✅ Temperature scaling to prevent saturation
-        logits = logits / self.temperature
-        
-        # ✅ Clipping으로 안정화
+        logits = logits / temperature  # Temperature 적용
         logits = torch.clamp(logits, min=-10, max=10)
-        
+    
         return logits
 
     def decode_all(self, z_dict, train_edge_index, ratio, epoch):

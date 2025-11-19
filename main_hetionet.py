@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument('--heads', type=int, default=4, help="HGT의 Attention Head 수")
     parser.add_argument('--layers', type=int, default=2, help="HGT 레이어 수")
     parser.add_argument('--temperature', type=float, default=2.0, help="Temperature scaling for prediction")
-    parser.add_argument('--lr', type=float, default=0.005)
+    parser.add_argument('--lr', type=float, default=0.003)
     parser.add_argument('--verbose', type=str, default="y")
     return parser.parse_args()
 
