@@ -1,0 +1,198 @@
+nohup: ignoring input
+사용 장치: cuda:0
+전처리된 Hetionet 데이터 로드 중...
+데이터 분할 중 (Train/Val/Test)...
+  - Validation negative 샘플 생성 중...
+  - Test negative 샘플 생성 중...
+
+[데이터 로드 완료]
+학습용 'treats' 엣지: 605
+검증용 'treats' 엣지 (Pos): 150
+검증용 'treats' 엣지 (Neg): 150
+테스트용 'treats' 엣지 (Pos): 150
+테스트용 'treats' 엣지 (Neg): 150
+  [Model] Anatomy: Emb 402 -> Hidden 128
+  [Model] Biological Process: Emb 11381 -> Hidden 128
+  [Model] Cellular Component: Emb 1391 -> Hidden 128
+  [Model] Compound: Feat 512 -> Hidden 128
+  [Model] Disease: Emb 137 -> Hidden 128
+  [Model] Gene: Emb 20945 -> Hidden 128
+  [Model] Molecular Function: Emb 2884 -> Hidden 128
+  [Model] Pathway: Emb 1822 -> Hidden 128
+  [Model] Pharmacologic Class: Emb 345 -> Hidden 128
+  [Model] Side Effect: Emb 5734 -> Hidden 128
+  [Model] Symptom: Emb 438 -> Hidden 128
+
+[PULL 모델 학습 시작]
+Epoch: 01, Loss: 0.2906, Val AUC: 0.7170, Test AUC: 0.7319 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 12개 엣지 추가 (Max Cap: 605, Avg Weight: 1.0000)
+Epoch: 02, Loss: 0.1353, Val AUC: 0.7180, Test AUC: 0.7297 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 24개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 03, Loss: 0.1142, Val AUC: 0.7185, Test AUC: 0.7354 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 36개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 04, Loss: 0.1001, Val AUC: 0.7209, Test AUC: 0.7458 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 48개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 05, Loss: 0.0855, Val AUC: 0.7339, Test AUC: 0.7505 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 60개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9998)
+Epoch: 06, Loss: 0.0715, Val AUC: 0.7372, Test AUC: 0.7483 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 72개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9996)
+Epoch: 07, Loss: 0.0574, Val AUC: 0.7290, Test AUC: 0.7461 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 84개 엣지 추가 (Max Cap: 605, Avg Weight: 1.0000)
+Epoch: 08, Loss: 0.0499, Val AUC: 0.7268, Test AUC: 0.7594 (Patience: 2/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 96개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 09, Loss: 0.0469, Val AUC: 0.7360, Test AUC: 0.7441 (Patience: 3/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 108개 엣지 추가 (Max Cap: 605, Avg Weight: 1.0000)
+Epoch: 10, Loss: 0.0424, Val AUC: 0.7372, Test AUC: 0.7464 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 121개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 11, Loss: 0.0391, Val AUC: 0.7340, Test AUC: 0.7457 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 133개 엣지 추가 (Max Cap: 605, Avg Weight: 1.0000)
+Epoch: 12, Loss: 0.0370, Val AUC: 0.7359, Test AUC: 0.7424 (Patience: 2/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 145개 엣지 추가 (Max Cap: 605, Avg Weight: 1.0000)
+Epoch: 13, Loss: 0.0339, Val AUC: 0.7321, Test AUC: 0.7500 (Patience: 3/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 157개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 14, Loss: 0.0326, Val AUC: 0.7343, Test AUC: 0.7581 (Patience: 4/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 169개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 15, Loss: 0.0339, Val AUC: 0.7453, Test AUC: 0.7434 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 181개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 16, Loss: 0.0334, Val AUC: 0.7441, Test AUC: 0.7522 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 193개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9998)
+Epoch: 17, Loss: 0.0334, Val AUC: 0.7401, Test AUC: 0.7419 (Patience: 2/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 205개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 18, Loss: 0.0300, Val AUC: 0.7404, Test AUC: 0.7500 (Patience: 3/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 217개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 19, Loss: 0.0302, Val AUC: 0.7413, Test AUC: 0.7561 (Patience: 4/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 229개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 20, Loss: 0.0271, Val AUC: 0.7481, Test AUC: 0.7589 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 242개 엣지 추가 (Max Cap: 605, Avg Weight: 1.0000)
+Epoch: 21, Loss: 0.0255, Val AUC: 0.7505, Test AUC: 0.7604 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 254개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 22, Loss: 0.0232, Val AUC: 0.7511, Test AUC: 0.7553 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 266개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 23, Loss: 0.0276, Val AUC: 0.7490, Test AUC: 0.7575 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 278개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9998)
+Epoch: 24, Loss: 0.0227, Val AUC: 0.7506, Test AUC: 0.7553 (Patience: 2/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 290개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9994)
+Epoch: 25, Loss: 0.0246, Val AUC: 0.7449, Test AUC: 0.7532 (Patience: 3/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 302개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9995)
+Epoch: 26, Loss: 0.0262, Val AUC: 0.7533, Test AUC: 0.7398 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 314개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9998)
+Epoch: 27, Loss: 0.0238, Val AUC: 0.7519, Test AUC: 0.7468 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 326개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 28, Loss: 0.0229, Val AUC: 0.7615, Test AUC: 0.7450 (Patience: 0/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 338개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9998)
+Epoch: 29, Loss: 0.0231, Val AUC: 0.7513, Test AUC: 0.7519 (Patience: 1/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 350개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 30, Loss: 0.0234, Val AUC: 0.7549, Test AUC: 0.7443 (Patience: 2/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 363개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9998)
+Epoch: 31, Loss: 0.0231, Val AUC: 0.7465, Test AUC: 0.7387 (Patience: 3/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 375개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Epoch: 32, Loss: 0.0247, Val AUC: 0.7486, Test AUC: 0.7361 (Patience: 4/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 387개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Epoch: 33, Loss: 0.0214, Val AUC: 0.7494, Test AUC: 0.7300 (Patience: 5/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 399개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9996)
+Epoch: 34, Loss: 0.0232, Val AUC: 0.7409, Test AUC: 0.7335 (Patience: 6/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 411개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Epoch: 35, Loss: 0.0249, Val AUC: 0.7440, Test AUC: 0.7299 (Patience: 7/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 423개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9994)
+Epoch: 36, Loss: 0.0221, Val AUC: 0.7432, Test AUC: 0.7407 (Patience: 8/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 435개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9999)
+Epoch: 37, Loss: 0.0229, Val AUC: 0.7429, Test AUC: 0.7440 (Patience: 9/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 447개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Epoch: 38, Loss: 0.0194, Val AUC: 0.7501, Test AUC: 0.7417 (Patience: 10/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 459개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9993)
+Epoch: 39, Loss: 0.0218, Val AUC: 0.7448, Test AUC: 0.7399 (Patience: 11/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 471개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9995)
+Epoch: 40, Loss: 0.0226, Val AUC: 0.7462, Test AUC: 0.7469 (Patience: 12/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 484개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9998)
+Epoch: 41, Loss: 0.0207, Val AUC: 0.7428, Test AUC: 0.7487 (Patience: 13/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 496개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Epoch: 42, Loss: 0.0199, Val AUC: 0.7463, Test AUC: 0.7446 (Patience: 14/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 508개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9995)
+Epoch: 43, Loss: 0.0212, Val AUC: 0.7412, Test AUC: 0.7552 (Patience: 15/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 520개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9996)
+Epoch: 44, Loss: 0.0180, Val AUC: 0.7417, Test AUC: 0.7556 (Patience: 16/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 532개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Epoch: 45, Loss: 0.0239, Val AUC: 0.7460, Test AUC: 0.7492 (Patience: 17/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 544개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Epoch: 46, Loss: 0.0196, Val AUC: 0.7417, Test AUC: 0.7426 (Patience: 18/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 556개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9996)
+Epoch: 47, Loss: 0.0196, Val AUC: 0.7344, Test AUC: 0.7567 (Patience: 19/20)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 568개 엣지 추가 (Max Cap: 605, Avg Weight: 0.9997)
+Early Stopping: 20 Epoch 동안 성능 향상이 없어 조기 종료합니다.
+
+[학습 완료]
+Best Epoch: 28, Val AUC: 0.7615, Best Test AUC: 0.7450
+총 학습 시간: 242.32s
+
+[약물 재창출 후보 분석 시작]
+[디버깅] Raw scores (마스킹 전):
+  - 최소: -64.6416, 최대: 13.7428
+
+--- 새로운 약물 재창출 후보 Top 20 (Temperature Adjusted) ---
+01. [약물] Esomeprazole -> [질병] gout (확률: 0.9986)
+02. [약물] Omeprazole -> [질병] gout (확률: 0.9986)
+03. [약물] Naproxen -> [질병] primary biliary cirrhosis (확률: 0.9986)
+04. [약물] Indomethacin -> [질병] primary biliary cirrhosis (확률: 0.9986)
+05. [약물] Colchicine -> [질병] alcohol dependence (확률: 0.9985)
+06. [약물] Esomeprazole -> [질병] primary biliary cirrhosis (확률: 0.9984)
+07. [약물] Naproxen -> [질병] alcohol dependence (확률: 0.9981)
+08. [약물] Saquinavir -> [질병] Paget's disease of bone (확률: 0.9981)
+09. [약물] Indomethacin -> [질병] alcohol dependence (확률: 0.9980)
+10. [약물] Nevirapine -> [질병] Paget's disease of bone (확률: 0.9978)
+11. [약물] Tiludronate -> [질병] brain cancer (확률: 0.9978)
+12. [약물] Nelfinavir -> [질병] Paget's disease of bone (확률: 0.9978)
+13. [약물] Cyproheptadine -> [질병] asthma (확률: 0.9976)
+14. [약물] Colchicine -> [질병] Barrett's esophagus (확률: 0.9976)
+15. [약물] Chenodeoxycholic acid -> [질병] gout (확률: 0.9975)
+16. [약물] Naproxen -> [질병] Barrett's esophagus (확률: 0.9972)
+17. [약물] Indomethacin -> [질병] Barrett's esophagus (확률: 0.9971)
+18. [약물] Nevirapine -> [질병] brain cancer (확률: 0.9969)
+19. [약물] Saquinavir -> [질병] brain cancer (확률: 0.9969)
+20. [약물] Cetirizine -> [질병] asthma (확률: 0.9965)

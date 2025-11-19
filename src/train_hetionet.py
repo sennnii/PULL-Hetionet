@@ -8,6 +8,12 @@ import gc
 def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
     edge_type_to_predict = ('Compound', 'treats', 'Disease')
     
+    # --- [설정] 논문 기반 하이퍼파라미터 조정 ---
+    GROWTH_RATE = 0.02      # r: 에폭당 엣지 증가율 (기존 0.05 -> 0.02로 보수적 조정)
+    MAX_EDGE_RATIO = 1.0    # 추가된 엣지가 원본 엣지의 100%를 넘지 않도록 제한 (Cap)
+    CONFIDENCE_THR = 0.8    # 최소 신뢰도: 이 확률보다 낮으면 Top-K여도 추가 안 함
+    # -----------------------------------------
+
     # 1. PULL: Expected Graph 구성 (Positive Edge 확장)
     if epoch == 1:
         # 첫 에폭은 원본 데이터만 사용
@@ -28,22 +34,40 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
             train_edges = train_data[edge_type_to_predict].edge_index
             probs[train_edges[0], train_edges[1]] = 0.0
             
-            # 상위 K개 선정
+            # [수정 1] 추가할 엣지 수 계산 및 제한 (Bounded Growth)
             n_total_edges = train_edges.shape[1]
-            n_add = int(n_total_edges * 0.05 * (epoch - 1))  # 에폭당 5%씩 추가
+            
+            # 목표 추가 개수: 에폭에 비례하여 증가
+            target_n_add = int(n_total_edges * GROWTH_RATE * (epoch - 1))
+            
+            # 최대 허용 개수 (Cap): 원본 데이터보다 너무 커지지 않게 제한
+            max_allowed = int(n_total_edges * MAX_EDGE_RATIO)
+            n_add = min(target_n_add, max_allowed)
             
             if n_add > 0:
-                # Top-K 추출
+                # Flatten 및 Top-K 추출
                 flat_probs = probs.flatten()
-                topk_values, topk_indices = torch.topk(flat_probs, n_add)
                 
-                row_idx = topk_indices // probs.shape[1]
-                col_idx = topk_indices % probs.shape[1]
+                # [수정 2] Confidence Threshold 적용 (노이즈 필터링)
+                # Top-K를 뽑되, 너무 낮은 확률값은 제외하기 위해 마스킹
+                mask = flat_probs > CONFIDENCE_THR
+                if mask.sum() < n_add:
+                    n_add = mask.sum().item() # 신뢰할 수 있는 엣지가 부족하면 개수 줄임
                 
-                pos_edge_index_add = torch.stack([row_idx, col_idx], dim=0)
-                pos_edge_weight_add = topk_values  # 확률값을 weight로 사용 (Soft Label)
-                
-                print(f"  - PULL: {n_add}개 엣지 추가 (Avg Weight: {pos_edge_weight_add.mean():.4f})")
+                if n_add > 0:
+                    topk_values, topk_indices = torch.topk(flat_probs, n_add)
+                    
+                    row_idx = topk_indices // probs.shape[1]
+                    col_idx = topk_indices % probs.shape[1]
+                    
+                    pos_edge_index_add = torch.stack([row_idx, col_idx], dim=0)
+                    pos_edge_weight_add = topk_values  # 확률값을 weight로 사용 (Soft Label)
+                    
+                    print(f"  - PULL: {n_add}개 엣지 추가 (Max Cap: {max_allowed}, Avg Weight: {pos_edge_weight_add.mean():.4f})")
+                else:
+                    print("  - PULL: 신뢰도 높은 엣지가 없어 추가하지 않음.")
+                    pos_edge_index_add = torch.empty((2, 0), dtype=torch.long, device=raw_scores.device)
+                    pos_edge_weight_add = torch.tensor([], device=raw_scores.device)
             else:
                 pos_edge_index_add = torch.empty((2, 0), dtype=torch.long, device=raw_scores.device)
                 pos_edge_weight_add = torch.tensor([], device=raw_scores.device)
@@ -52,6 +76,7 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
         original_edges = train_data[edge_type_to_predict].edge_index
         original_weights = torch.ones(original_edges.shape[1], device=original_edges.device)
         
+        # 병합
         pos_edge_index = torch.cat([original_edges, pos_edge_index_add], dim=1)
         pos_edge_weight = torch.cat([original_weights, pos_edge_weight_add], dim=0)
 
@@ -91,12 +116,17 @@ def train(model, optimizer, data, train_data, criterion, epoch, z_dict=None):
         pos_out = model.decode(z_dict_new, pos_edge_index)
         neg_out = model.decode(z_dict_new, neg_edge_index)
         
-        # Weighted BCE Loss
+        # Weighted BCE Loss (논문의 L_E에 해당)
         out = torch.cat([pos_out, neg_out])
         label = torch.cat([torch.ones_like(pos_out), torch.zeros_like(neg_out)])
         weight = torch.cat([pos_edge_weight, torch.ones_like(neg_out)]) 
         
         loss = F.binary_cross_entropy_with_logits(out, label, weight=weight)
+        
+        # [선택 사항] Correction Loss (L_C) - 원본 데이터 강조
+        # 논문에서는 L_C를 별도로 계산하지만, 간단히 구현하기 위해 L2 정규화나 
+        # 원본 엣지에 대한 가중치를 높이는 방식을 사용할 수도 있음.
+        # 현재 구조에서는 'Bounded Growth'(위의 n_limit)가 가장 큰 효과를 줍니다.
         
         loss.backward()
         optimizer.step()
@@ -131,7 +161,9 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
     print("\n[약물 재창출 후보 분석 시작]")
     model.eval()
     
-    # New Model signature: encode(data, edge_index_dict, edge_weight_dict=None)
+    # Temperature Scaling 추가 (확률 분포 완화)
+    temperature = 2.0 
+    
     z_dict = model.encode(data, data.edge_index_dict, None)
     
     compound_embeds = z_dict['Compound'].cpu()
@@ -151,7 +183,8 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
                 edge_index = data['Compound', 'treats', 'Disease'][split].cpu()
                 raw_scores[edge_index[0], edge_index[1]] = -float('inf')
     
-    probs = torch.sigmoid(raw_scores)
+    # Temperature Scaling 적용 및 Sigmoid
+    probs = torch.sigmoid(raw_scores / temperature)
     
     # Get Top-K Candidates
     initial_candidates = num_candidates * 10
@@ -169,11 +202,12 @@ def get_drug_repurposing_candidates(data, model, num_candidates=20):
     final_candidates = []
     max_per_disease = 3
     
-    print("\n--- 새로운 약물 재창출 후보 Top 20 ---")
+    print("\n--- 새로운 약물 재창출 후보 Top 20 (Temperature Adjusted) ---")
     
     for i in range(initial_candidates):
         prob = top_k_probs[i].item()
-        if prob < 0.5: continue
+        # 임계값 완화
+        if prob < 0.1: continue 
 
         idx_c = row_indices[i].item()
         idx_d = col_indices[i].item()

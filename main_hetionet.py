@@ -136,41 +136,50 @@ def main():
 
     # 4. PULL 학습 시작
     print("\n[PULL 모델 학습 시작]")
-    best_val_auc = test_auc = 0
+    best_val_auc = 0
+    best_test_auc = 0  # Best Test AUC 별도 저장
     best_epoch = 0
     z_dict = None 
     
-    patience = 20  # 성능이 안 올라도 20번은 기다림
+    patience = 20 
     patience_counter = 0 
 
     start_time = time.time()
     for epoch in range(1, args.epochs + 1):
         epoch_start_time = time.time()
         
-        # PULL 학습
+        # 1. PULL 학습
         loss, z_dict, _, _ = train(model, optimizer, data, train_data, criterion, epoch, z_dict)
         
-        # 검증
+        # 2. 검증 (Validation) - 현재 모델로 평가
         val_loss, val_auc = test(data, model, val_edges, criterion)
         
+        # 3. 테스트 (Test) - 현재 모델로 평가 (매 Epoch 실행!)
+        #    주의: 여기서 test_auc는 "현재 Epoch의 Test 점수"입니다.
+        curr_test_loss, curr_test_auc = test(data, model, test_edges, criterion)
+        
+        # 4. Best 모델 갱신 로직
         if val_auc > best_val_auc:
             best_val_auc = val_auc
+            best_test_auc = curr_test_auc  # 그 순간의 Test 점수 기록
             best_epoch = epoch
-            # 테스트
-            test_loss, test_auc = test(data, model, test_edges, criterion)
-            patience_counter = 0 # 신기록 달성 시 카운터 초기화
+            patience_counter = 0
+            # (선택사항) 모델 저장
+            # torch.save(model.state_dict(), 'best_model.pt')
         else:
-            patience_counter += 1 # 실패 시 카운터 증가
+            patience_counter += 1 
             if patience_counter >= patience:
                 print(f"Early Stopping: {patience} Epoch 동안 성능 향상이 없어 조기 종료합니다.")
                 break
 
         epoch_time = time.time() - epoch_start_time
         if args.verbose == 'y':
-            print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val AUC: {val_auc:.4f}, Test AUC: {test_auc:.4f} (Patience: {patience_counter}/{patience})')
+            # 출력 시 '현재 Test 점수'를 보여줍니다.
+            print(f'Epoch: {epoch:02d}, Loss: {loss:.4f}, Val AUC: {val_auc:.4f}, Test AUC: {curr_test_auc:.4f} (Patience: {patience_counter}/{patience})')
         
     print("\n[학습 완료]")
-    print(f'Best Epoch: {best_epoch:02d}, Val AUC: {best_val_auc:.4f}, Test AUC: {test_auc:.4f}')
+    # 최종적으로 가장 좋았던 Validation 때의 Test 점수를 출력
+    print(f'Best Epoch: {best_epoch:02d}, Val AUC: {best_val_auc:.4f}, Best Test AUC: {best_test_auc:.4f}')
     print(f'총 학습 시간: {(time.time() - start_time):.2f}s')
 
     # 5. 약물 재창출 후보 분석
