@@ -236,13 +236,37 @@ def preprocess_hetionet(hetionet_data):
     data['Compound'].x = compound_features
     print(f"    ✓ Compound 특징 shape: {compound_features.shape}")
     
-    # 2.6. 질병 One-hot 특징 생성
-    print("  - 2.6/4: 질병 특징 생성 중...")
-    disease_count = data['Disease'].num_nodes
-    disease_features = torch.eye(disease_count, dtype=torch.float32)
+    print("  - 2.6/4: 질병 특징 생성 중 (Gene association)...")
+
+    # Disease-Gene 관계에서 특징 추출
+    disease_gene_edges = [e for e in hetionet_data['edges'] 
+                        if e['kind'] == 'associates']
+
+    # 각 질병이 연관된 유전자 개수로 특징 벡터 생성
+    disease_to_genes = defaultdict(set)  # from collections 삭제
+
+    for edge in disease_gene_edges:
+        disease_id = '::'.join([str(item) for item in edge['source_id']])
+        gene_id = '::'.join([str(item) for item in edge['target_id']])
+        
+        if disease_id in node_mapping.get('Disease', {}):
+            disease_idx = node_mapping['Disease'][disease_id]
+            if gene_id in node_mapping.get('Gene', {}):
+                gene_idx = node_mapping['Gene'][gene_id]
+                disease_to_genes[disease_idx].add(gene_idx)
+
+    # Gene association 기반 특징 (간단한 bag-of-genes)
+    max_genes = 100  # 상위 100개 유전자만 사용
+    disease_features = torch.zeros((data['Disease'].num_nodes, max_genes), dtype=torch.float32)
+
+    for disease_idx, gene_set in disease_to_genes.items():
+        for i, gene_idx in enumerate(sorted(gene_set)[:max_genes]):
+            disease_features[disease_idx, i] = 1.0
+
     data['Disease'].x = disease_features
     print(f"    ✓ Disease 특징 shape: {disease_features.shape}")
-    
+    print(f"    ✓ 평균 관련 유전자 수: {disease_features.sum(dim=1).mean():.1f}")
+
     # 3. ID-이름 매핑 저장
     print("  - 3/4: ID-이름 매핑 저장 중...")
     data.node_names = {}
