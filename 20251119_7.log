@@ -1,0 +1,84 @@
+nohup: ignoring input
+사용 장치: cuda:0
+전처리된 Hetionet 데이터 로드 중...
+데이터 분할 중 (Train/Val/Test)...
+  - Validation negative 샘플 생성 중...
+  - Test negative 샘플 생성 중...
+
+[데이터 로드 완료]
+학습용 'treats' 엣지: 605
+검증용 'treats' 엣지 (Pos): 150
+검증용 'treats' 엣지 (Neg): 150
+테스트용 'treats' 엣지 (Pos): 150
+테스트용 'treats' 엣지 (Neg): 150
+  [Model] Anatomy: Emb 402 -> Hidden 128
+  [Model] Biological Process: Emb 11381 -> Hidden 128
+  [Model] Cellular Component: Emb 1391 -> Hidden 128
+  [Model] Compound: Feat 512 -> Hidden 128
+  [Model] Disease: Emb 137 -> Hidden 128
+  [Model] Gene: Emb 20945 -> Hidden 128
+  [Model] Molecular Function: Emb 2884 -> Hidden 128
+  [Model] Pathway: Emb 1822 -> Hidden 128
+  [Model] Pharmacologic Class: Emb 345 -> Hidden 128
+  [Model] Side Effect: Emb 5734 -> Hidden 128
+  [Model] Symptom: Emb 438 -> Hidden 128
+
+[PULL 모델 학습 시작]
+Epoch: 01, Loss: 0.3549, Val AUC: 0.7148, Test AUC: 0.7191 (Time: 7.44s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 30개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 02, Loss: 0.1233, Val AUC: 0.7117, Test AUC: 0.7191 (Time: 4.98s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 60개 엣지 추가 (Avg Weight: 0.9999)
+Epoch: 03, Loss: 0.1065, Val AUC: 0.7200, Test AUC: 0.7351 (Time: 4.79s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 90개 엣지 추가 (Avg Weight: 0.9999)
+Epoch: 04, Loss: 0.0878, Val AUC: 0.7104, Test AUC: 0.7351 (Time: 4.77s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 121개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 05, Loss: 0.0771, Val AUC: 0.7069, Test AUC: 0.7351 (Time: 4.78s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 151개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 06, Loss: 0.0747, Val AUC: 0.7136, Test AUC: 0.7351 (Time: 4.79s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 181개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 07, Loss: 0.0738, Val AUC: 0.7135, Test AUC: 0.7351 (Time: 4.79s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 211개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 08, Loss: 0.0677, Val AUC: 0.7067, Test AUC: 0.7351 (Time: 4.78s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 242개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 09, Loss: 0.0568, Val AUC: 0.7056, Test AUC: 0.7351 (Time: 4.79s)
+  - PULL: 새로운 positive 엣지(Expected Graph) 탐색 중...
+  - PULL: 272개 엣지 추가 (Avg Weight: 1.0000)
+Epoch: 10, Val AUC가 (0.7163) 이전 최고(0.7200)보다 낮아 조기 종료합니다.
+
+[학습 완료]
+Best Epoch: 03, Val AUC: 0.7200, Test AUC: 0.7351
+총 학습 시간: 50.68s
+
+[약물 재창출 후보 분석 시작]
+[디버깅] Raw scores (마스킹 전):
+  - 최소: -1366.6946, 최대: 26.1409
+
+--- 새로운 약물 재창출 후보 Top 20 ---
+01. [약물] Mecamylamine -> [질병] epilepsy syndrome (확률: 1.0000)
+02. [약물] Disulfiram -> [질병] Alzheimer's disease (확률: 1.0000)
+03. [약물] Citalopram -> [질병] gout (확률: 1.0000)
+04. [약물] Indomethacin -> [질병] Alzheimer's disease (확률: 1.0000)
+05. [약물] Rivastigmine -> [질병] alcohol dependence (확률: 1.0000)
+06. [약물] Colchicine -> [질병] alcohol dependence (확률: 1.0000)
+07. [약물] Chenodeoxycholic acid -> [질병] Alzheimer's disease (확률: 1.0000)
+08. [약물] Indomethacin -> [질병] alcohol dependence (확률: 1.0000)
+09. [약물] Disulfiram -> [질병] gout (확률: 1.0000)
+10. [약물] Donepezil -> [질병] gout (확률: 1.0000)
+11. [약물] Eprosartan -> [질병] epilepsy syndrome (확률: 1.0000)
+12. [약물] Dextrothyroxine -> [질병] Barrett's esophagus (확률: 1.0000)
+13. [약물] Guanabenz -> [질병] epilepsy syndrome (확률: 1.0000)
+14. [약물] Liotrix -> [질병] Barrett's esophagus (확률: 1.0000)
+15. [약물] Liothyronine -> [질병] Barrett's esophagus (확률: 1.0000)
+16. [약물] Colchicine -> [질병] hepatitis B (확률: 1.0000)
+17. [약물] Probenecid -> [질병] hepatitis B (확률: 1.0000)
+18. [약물] Methimazole -> [질병] hypothyroidism (확률: 1.0000)
+19. [약물] Galantamine -> [질병] hepatitis B (확률: 1.0000)
+20. [약물] Dextrothyroxine -> [질병] Graves' disease (확률: 1.0000)
